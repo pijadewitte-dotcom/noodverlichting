@@ -47,6 +47,10 @@
                   <option value="3">3+ zones</option>
                 </select>
               </label>
+              <label class="check-row">
+                <input id="royalDecreeLayout" name="royalDecreeLayout" type="checkbox" checked />
+                Automatisch intekenen volgens 30 m²-vakken
+              </label>
             </fieldset>
 
             <fieldset>
@@ -73,12 +77,12 @@
               <legend>Montage</legend>
               <div class="segmented" role="radiogroup" aria-label="Montagetype">
                 <label>
-                  <input type="radio" name="mounting" value="plafond-inbouw" checked />
-                  <span>Plafond inbouw</span>
+                  <input type="radio" name="mounting" value="inbouw" checked />
+                  <span>Inbouw</span>
                 </label>
                 <label>
-                  <input type="radio" name="mounting" value="plafond-opbouw" />
-                  <span>Plafond opbouw</span>
+                  <input type="radio" name="mounting" value="opbouw" />
+                  <span>Opbouw</span>
                 </label>
               </div>
               <label>
@@ -103,7 +107,7 @@
         <section class="canvas-area" aria-label="Schets en offerte">
           <div class="topbar">
             <div>
-              <p class="eyebrow">Klik op de schets om Zemper-armaturen te plaatsen</p>
+              <p class="eyebrow">Automatische middenpunten per 30 m², extra armaturen manueel mogelijk</p>
               <h2>Zone-schets</h2>
             </div>
             <div class="toolbox" aria-label="Component kiezen">
@@ -147,7 +151,7 @@
               <h2>Beslisregels</h2>
               <ul id="rules"></ul>
               <p class="source-note">
-                Productdata gebaseerd op Zemper noodverlichtingsreeksen.
+                Productdata gebaseerd op online technische fiches en Zemper productdata waar beschikbaar.
                 <a href="https://zemper.com/nl-be/noodverlichting-4/" target="_blank" rel="noreferrer">Bron bekijken</a>
               </p>
             </section>
