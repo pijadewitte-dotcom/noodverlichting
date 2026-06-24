@@ -7,11 +7,7 @@ const printButton = document.querySelector("#print-quote");
 const toolButtons = [...document.querySelectorAll(".tool")];
 
 let selectedTool = "escapeRoute";
-let placedItems = [
-  { id: crypto.randomUUID(), type: "escapeRoute", x: 16, y: 78 },
-  { id: crypto.randomUUID(), type: "antiPanic", x: 57, y: 36 },
-  { id: crypto.randomUUID(), type: "highOutput", x: 82, y: 72 },
-];
+let manualItems = [];
 
 const zemperSeries = {
   compact: {
@@ -79,6 +75,33 @@ const accessoryCatalog = {
   },
 };
 
+const projectTypes = {
+  inbouw: {
+    code: "LSR",
+    name: "LSR inbouw noodverlichting",
+    unitPrice: 155,
+    mounting: "Inbouw",
+    lightOutput: "Projecttype volgens opgelegde keuze; technische fiche online nog te koppelen aan exact artikel.",
+    autonomy: "1 h / 3 h volgens gekozen uitvoering",
+    battery: "Volgens technische fiche van gekozen LSR-uitvoering",
+    protection: "Volgens technische fiche van gekozen LSR-uitvoering",
+    standards: "Noodverlichting volgens EN 60598-2-22 te verifiëren op definitieve fiche",
+    source: "https://zemper.com/nl-be/noodverlichting-4/",
+  },
+  opbouw: {
+    code: "LSM3250LDPW",
+    name: "LSM3250LDPW opbouw noodverlichting",
+    unitPrice: 185,
+    mounting: "Opbouw",
+    lightOutput: "3250-reeks projecttype volgens opgelegde keuze; technische fiche online nog te koppelen aan exact artikel.",
+    autonomy: "1 h / 3 h volgens gekozen uitvoering",
+    battery: "Volgens technische fiche LSM3250LDPW",
+    protection: "Volgens technische fiche LSM3250LDPW",
+    standards: "Noodverlichting volgens EN 60598-2-22 te verifiëren op definitieve fiche",
+    source: "https://zemper.com/nl-be/noodverlichting-4/",
+  },
+};
+
 const toolLabels = {
   escapeRoute: "VR",
   antiPanic: "AP",
@@ -99,6 +122,7 @@ function readConfig() {
     area: Number(data.get("area") || 0),
     building: data.get("building"),
     zones: Number(data.get("zones") || 1),
+    royalDecreeLayout: data.get("royalDecreeLayout") === "on",
     escapeRoute: data.get("escapeRoute") === "on",
     antiPanic: data.get("antiPanic") === "on",
     monitoring: data.get("monitoring") === "on",
@@ -116,38 +140,77 @@ function chooseSeries(config) {
   return "standard";
 }
 
-function countPlaced(type) {
-  return placedItems.filter((item) => item.type === type).length;
+function getKbFixtureCount(area) {
+  if (area <= 0) return 0;
+  if (area > 60) return Math.max(2, Math.ceil(area / 30));
+  return Math.max(1, Math.ceil(area / 30));
+}
+
+function getAutoLayout(area) {
+  const count = getKbFixtureCount(area);
+  if (!count) return [];
+  const cols = Math.ceil(Math.sqrt(count));
+  const rows = Math.ceil(count / cols);
+  return Array.from({ length: count }, (_, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const x = ((col + 0.5) / cols) * 100;
+    const y = ((row + 0.5) / rows) * 100;
+    return {
+      id: `auto-${index}`,
+      type: index % 3 === 2 ? "antiPanic" : "escapeRoute",
+      x,
+      y,
+      auto: true,
+      segment: index + 1,
+    };
+  });
+}
+
+function getPlacedItems(config = readConfig()) {
+  return [...(config.royalDecreeLayout ? getAutoLayout(config.area) : []), ...manualItems];
+}
+
+function countPlaced(type, config) {
+  return getPlacedItems(config).filter((item) => item.type === type).length;
 }
 
 function calculateProposal(config) {
   const seriesKey = chooseSeries(config);
   const series = zemperSeries[seriesKey];
+  const projectType = projectTypes[config.mounting];
   const rules = [];
   const lines = [];
-  const escapeRouteMin = config.escapeRoute ? Math.max(1, Math.ceil(config.area / 80), config.zones) : 0;
+  const kbMin = config.royalDecreeLayout ? getKbFixtureCount(config.area) : 0;
+  const escapeRouteMin = config.escapeRoute ? Math.max(kbMin, config.zones) : 0;
   const antiPanicMin = config.antiPanic ? Math.max(1, Math.ceil(config.area / 120)) : 0;
   const highOutputMin = config.area > 250 || config.building === "magazijn" ? Math.ceil(config.area / 180) : 0;
-  const escapeRouteQty = Math.max(escapeRouteMin, countPlaced("escapeRoute"));
-  const antiPanicQty = Math.max(antiPanicMin, countPlaced("antiPanic"));
-  const highOutputQty = Math.max(highOutputMin, countPlaced("highOutput"));
+  const escapeRouteQty = Math.max(escapeRouteMin, countPlaced("escapeRoute", config));
+  const antiPanicQty = Math.max(antiPanicMin, countPlaced("antiPanic", config));
+  const highOutputQty = Math.max(highOutputMin, countPlaced("highOutput", config));
 
-  rules.push(`${config.area} m² vertaalt naar minimaal ${escapeRouteMin + antiPanicMin + highOutputMin} noodarmatuur(en).`);
-  rules.push(`${config.zones} zone(s) verhogen het minimum voor vluchtrouteverlichting.`);
+  rules.push(`Volgens de projectregel wordt elke 30 m² als vak beschouwd; ${config.area} m² geeft ${kbMin} automatisch geplaatste armatuur(en).`);
+  rules.push(`Bij meer dan 60 m² worden minstens 2 noodverlichtingen voorzien en in het midden van de 30 m²-vakken getekend.`);
+  rules.push(`${config.mounting === "inbouw" ? "Inbouw" : "Opbouw"} kiest automatisch type ${projectType.code}.`);
   rules.push(`${config.budget >= 4200 || config.monitoring ? "Smart/DALI2" : "standalone"} voorstel op basis van budget en bewaking.`);
   rules.push(`${config.autonomy} uur autonomie geselecteerd; Zemper-series ondersteunen 1 of 3 uur volgens de geraadpleegde productdata.`);
-  rules.push(`${config.mounting === "plafond-inbouw" ? "Plafond inbouw" : "Plafond opbouw"} wordt als montagekeuze meegenomen in de offerte.`);
 
-  function addSeriesLine(label, quantity, selectedSeries = series) {
+  function addSeriesLine(label, quantity, selectedSeries = series, selectedType = projectType) {
     if (quantity <= 0) return;
     lines.push({
-      name: `${label}: ${selectedSeries.name}`,
+      name: `${label}: ${selectedType.code} (${selectedType.name})`,
       quantity,
-      description: `${selectedSeries.description} ${selectedSeries.lumen}. ${selectedSeries.control}.`,
-      unitPrice: selectedSeries.unitPrice,
-      total: selectedSeries.unitPrice * quantity,
+      description: `${selectedType.mounting}. ${selectedType.lightOutput} Reeksreferentie: ${selectedSeries.name}, ${selectedSeries.lumen}, ${selectedSeries.control}.`,
+      unitPrice: selectedType.unitPrice,
+      total: selectedType.unitPrice * quantity,
       color: selectedSeries.color,
-      source: selectedSeries.source,
+      source: selectedType.source,
+      tech: [
+        `Autonomie: ${selectedType.autonomy}`,
+        `Batterij: ${selectedType.battery}`,
+        `Bescherming: ${selectedType.protection}`,
+        `Normen: ${selectedType.standards}`,
+      ],
     });
   }
 
@@ -180,17 +243,19 @@ function calculateProposal(config) {
 
 function renderSketch() {
   sketch.querySelectorAll(".placed-item").forEach((node) => node.remove());
-  placedItems.forEach((item) => {
+  const config = readConfig();
+  getPlacedItems(config).forEach((item) => {
     const marker = document.createElement("button");
     marker.type = "button";
-    marker.className = `placed-item ${item.type}`;
+    marker.className = `placed-item ${item.type}${item.auto ? " auto" : ""}`;
     marker.style.left = `${item.x}%`;
     marker.style.top = `${item.y}%`;
-    marker.textContent = toolLabels[item.type];
-    marker.title = "Klik om te verwijderen";
+    marker.textContent = item.auto ? `${item.segment}` : toolLabels[item.type];
+    marker.title = item.auto ? `Automatisch vak ${item.segment}` : "Klik om te verwijderen";
     marker.addEventListener("click", (event) => {
       event.stopPropagation();
-      placedItems = placedItems.filter((placed) => placed.id !== item.id);
+      if (item.auto) return;
+      manualItems = manualItems.filter((placed) => placed.id !== item.id);
       update();
     });
     sketch.append(marker);
@@ -200,6 +265,7 @@ function renderSketch() {
 function renderQuote() {
   const config = readConfig();
   const proposal = calculateProposal(config);
+  const placedItems = getPlacedItems(config);
   const remaining = config.budget - proposal.total;
   const budgetState = remaining >= 0 ? "Binnen budget" : "Boven budget";
 
@@ -218,6 +284,7 @@ function renderQuote() {
           <div>
             <h3>${line.quantity} x ${line.name}</h3>
             <p>${line.description}</p>
+            ${line.tech ? `<ul class="tech-list">${line.tech.map((item) => `<li>${item}</li>`).join("")}</ul>` : ""}
             ${line.source ? `<a href="${line.source}" target="_blank" rel="noreferrer">Zemper serie</a>` : ""}
           </div>
           <div class="price">${euro(line.total)}</div>
@@ -245,7 +312,7 @@ sketch.addEventListener("click", (event) => {
   const rect = sketch.getBoundingClientRect();
   const x = ((event.clientX - rect.left) / rect.width) * 100;
   const y = ((event.clientY - rect.top) / rect.height) * 100;
-  placedItems.push({ id: crypto.randomUUID(), type: selectedTool, x, y });
+  manualItems.push({ id: crypto.randomUUID(), type: selectedTool, x, y });
   update();
 });
 
