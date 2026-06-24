@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Noodverlichting Configurator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace" aria-label="Configurator">
+        <aside class="panel controls" aria-label="Projectgegevens">
+          <div class="brand">
+            <div class="brand-mark" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div>
+              <p class="eyebrow">Zemper offerte tool</p>
+              <h1>Noodverlichting Configurator</h1>
+            </div>
+          </div>
+
+          <form id="config-form">
+            <fieldset>
+              <legend>Ruimte</legend>
+              <label>
+                Aantal m²
+                <input id="area" name="area" type="number" min="1" max="5000" value="85" />
+              </label>
+              <label>
+                Type gebouw
+                <select id="building" name="building">
+                  <option value="kantoor">Kantoor</option>
+                  <option value="winkel">Winkel</option>
+                  <option value="horeca">Horeca</option>
+                  <option value="magazijn">Magazijn</option>
+                  <option value="zorg">Zorgomgeving</option>
+                </select>
+              </label>
+              <label>
+                Aantal zones
+                <select id="zones" name="zones">
+                  <option value="1">1 zone</option>
+                  <option value="2">2 zones</option>
+                  <option value="3">3+ zones</option>
+                </select>
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Vereisten</legend>
+              <label class="check-row">
+                <input id="escapeRoute" name="escapeRoute" type="checkbox" checked />
+                Vluchtrouteverlichting nodig
+              </label>
+              <label class="check-row">
+                <input id="antiPanic" name="antiPanic" type="checkbox" checked />
+                Anti-paniekverlichting nodig
+              </label>
+              <label class="check-row">
+                <input id="monitoring" name="monitoring" type="checkbox" />
+                DALI2 of SmartZ bewaking nodig
+              </label>
+              <label class="check-row">
+                <input id="ip65" name="ip65" type="checkbox" />
+                IP65 accessoire gewenst
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Montage</legend>
+              <div class="segmented" role="radiogroup" aria-label="Montagetype">
+                <label>
+                  <input type="radio" name="mounting" value="plafond-inbouw" checked />
+                  <span>Plafond inbouw</span>
+                </label>
+                <label>
+                  <input type="radio" name="mounting" value="plafond-opbouw" />
+                  <span>Plafond opbouw</span>
+                </label>
+              </div>
+              <label>
+                Autonomie
+                <select id="autonomy" name="autonomy">
+                  <option value="1">1 uur</option>
+                  <option value="3" selected>3 uur</option>
+                </select>
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Budget</legend>
+              <label>
+                Budget in €
+                <input id="budget" name="budget" type="number" min="0" step="50" value="2750" />
+              </label>
+            </fieldset>
+          </form>
+        </aside>
+
+        <section class="canvas-area" aria-label="Schets en offerte">
+          <div class="topbar">
+            <div>
+              <p class="eyebrow">Klik op de schets om Zemper-armaturen te plaatsen</p>
+              <h2>Zone-schets</h2>
+            </div>
+            <div class="toolbox" aria-label="Component kiezen">
+              <button class="tool active" type="button" data-tool="escapeRoute" title="Vluchtroutearmatuur">
+                <span class="tool-icon danger"></span>
+                <span>Vluchtroute</span>
+              </button>
+              <button class="tool" type="button" data-tool="antiPanic" title="Anti-paniekarmatuur">
+                <span class="tool-icon smoke"></span>
+                <span>Anti-paniek</span>
+              </button>
+              <button class="tool" type="button" data-tool="highOutput" title="Hoge lichtsterkte">
+                <span class="tool-icon sound"></span>
+                <span>High output</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="sketch-wrap">
+            <div id="sketch" class="sketch" role="application" aria-label="Interactieve ruimteschets">
+              <div class="grid-label entrance">Ingang</div>
+              <div class="grid-label service">Technische ruimte</div>
+            </div>
+          </div>
+
+          <div class="results-grid">
+            <section class="panel quote-panel">
+              <div class="section-title">
+                <div>
+                  <p class="eyebrow">Voorstel</p>
+                  <h2>Offerte-overzicht</h2>
+                </div>
+                <button id="print-quote" type="button">Print offerte</button>
+              </div>
+              <div id="quote-summary" class="summary"></div>
+              <div id="products" class="products"></div>
+            </section>
+
+            <section class="panel rules-panel">
+              <p class="eyebrow">Waarom dit voorstel?</p>
+              <h2>Beslisregels</h2>
+              <ul id="rules"></ul>
+              <p class="source-note">
+                Productdata gebaseerd op Zemper noodverlichtingsreeksen.
+                <a href="https://zemper.com/nl-be/noodverlichting-4/" target="_blank" rel="noreferrer">Bron bekijken</a>
+              </p>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
