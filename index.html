@@ -107,13 +107,13 @@
         <section class="canvas-area" aria-label="Schets en offerte">
           <div class="topbar">
             <div>
-              <p class="eyebrow">Automatische middenpunten per 30 m², extra armaturen manueel mogelijk</p>
+              <p class="eyebrow">Teken de vluchtroute met rechte hoeken en plaats extra armaturen</p>
               <h2>Zone-schets</h2>
             </div>
             <div class="toolbox" aria-label="Component kiezen">
-              <button class="tool active" type="button" data-tool="escapeRoute" title="Vluchtroutearmatuur">
+              <button class="tool active" type="button" data-tool="escapeRoute" title="Vluchtroute tekenen">
                 <span class="tool-icon danger"></span>
-                <span>Vluchtroute</span>
+                <span>Route</span>
               </button>
               <button class="tool" type="button" data-tool="antiPanic" title="Anti-paniekarmatuur">
                 <span class="tool-icon smoke"></span>
@@ -128,6 +128,7 @@
 
           <div class="sketch-wrap">
             <div id="sketch" class="sketch" role="application" aria-label="Interactieve ruimteschets">
+              <svg id="route-layer" class="route-layer" aria-hidden="true"></svg>
               <div class="grid-label entrance">Ingang</div>
               <div class="grid-label service">Technische ruimte</div>
             </div>
@@ -156,6 +157,35 @@
               </p>
             </section>
           </div>
+
+          <section class="panel devices-panel">
+            <div class="section-title">
+              <div>
+                <p class="eyebrow">Toestellen</p>
+                <h2>Catalogus & technische fiches</h2>
+              </div>
+              <div class="catalog-filters" aria-label="Toestellen filteren">
+                <label>
+                  Type
+                  <select id="device-type-filter">
+                    <option value="all">Alle types</option>
+                    <option value="vluchtweg">Vluchtweg</option>
+                    <option value="antipaniek">Anti-paniek</option>
+                    <option value="high-output">High output</option>
+                  </select>
+                </label>
+                <label>
+                  Montage
+                  <select id="device-mounting-filter">
+                    <option value="all">Alle montages</option>
+                    <option value="inbouw">Inbouw</option>
+                    <option value="opbouw">Opbouw</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div id="device-catalog" class="device-catalog"></div>
+          </section>
         </section>
       </section>
     </main>
