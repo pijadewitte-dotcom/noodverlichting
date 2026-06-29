@@ -5,9 +5,14 @@ const summaryNode = document.querySelector("#quote-summary");
 const rulesNode = document.querySelector("#rules");
 const printButton = document.querySelector("#print-quote");
 const toolButtons = [...document.querySelectorAll(".tool")];
+const routeLayer = document.querySelector("#route-layer");
+const deviceCatalogNode = document.querySelector("#device-catalog");
+const deviceTypeFilter = document.querySelector("#device-type-filter");
+const deviceMountingFilter = document.querySelector("#device-mounting-filter");
 
 let selectedTool = "escapeRoute";
 let manualItems = [];
+let routePoints = [];
 
 const zemperSeries = {
   compact: {
@@ -101,6 +106,99 @@ const projectTypes = {
     source: "https://zemper.com/nl-be/noodverlichting-4/",
   },
 };
+
+const deviceCatalog = [
+  {
+    code: "LSR",
+    name: "LSR inbouw vluchtwegarmatuur",
+    type: "vluchtweg",
+    mounting: "inbouw",
+    application: "Vluchtweg",
+    source: "https://zemper.com/nl-be/noodverlichting-4/",
+    fiche: {
+      lichtstroom: "Te koppelen aan exacte LSR-fiche",
+      autonomie: "1 h / 3 h volgens uitvoering",
+      batterij: "Volgens technische fiche LSR",
+      bescherming: "Volgens technische fiche LSR",
+      norm: "EN 60598-2-22 te valideren op definitieve fiche",
+    },
+  },
+  {
+    code: "LSM3250LDPW",
+    name: "LSM3250LDPW opbouw vluchtwegarmatuur",
+    type: "vluchtweg",
+    mounting: "opbouw",
+    application: "Vluchtweg",
+    source: "https://zemper.com/nl-be/noodverlichting-4/",
+    fiche: {
+      lichtstroom: "Te koppelen aan exacte LSM3250LDPW-fiche",
+      autonomie: "1 h / 3 h volgens uitvoering",
+      batterij: "Volgens technische fiche LSM3250LDPW",
+      bescherming: "Volgens technische fiche LSM3250LDPW",
+      norm: "EN 60598-2-22 te valideren op definitieve fiche",
+    },
+  },
+  {
+    code: "LSR-AP",
+    name: "LSR inbouw anti-paniekarmatuur",
+    type: "antipaniek",
+    mounting: "inbouw",
+    application: "Anti-paniek",
+    source: "https://zemper.com/nl-be/noodverlichting-4/spazio-r-4/",
+    fiche: {
+      lichtstroom: "140-280 lm noodmodus als Zemper SPAZIO R-referentie",
+      autonomie: "1 h / 3 h",
+      batterij: "LiFePO4 volgens Zemper reeksdata waar beschikbaar",
+      bescherming: "Afhankelijk van accessoire en uitvoering",
+      norm: "EN 60598-2-22 te valideren op definitieve fiche",
+    },
+  },
+  {
+    code: "LSM3250LDPW-AP",
+    name: "LSM3250LDPW opbouw anti-paniekarmatuur",
+    type: "antipaniek",
+    mounting: "opbouw",
+    application: "Anti-paniek",
+    source: "https://zemper.com/nl-be/noodverlichting-4/space-4/",
+    fiche: {
+      lichtstroom: "280-420 lm noodmodus als Zemper SPACE-referentie",
+      autonomie: "1 h / 3 h",
+      batterij: "LiFePO4 volgens Zemper reeksdata waar beschikbaar",
+      bescherming: "IP65 optioneel via accessoire waar van toepassing",
+      norm: "EN 60598-2-22 te valideren op definitieve fiche",
+    },
+  },
+  {
+    code: "SPAZIO-POWER-IN",
+    name: "SPAZIO POWER inbouw high output",
+    type: "high-output",
+    mounting: "inbouw",
+    application: "High output",
+    source: "https://zemper.com/nl-be/noodverlichting-4/spazio-power-4/",
+    fiche: {
+      lichtstroom: "380-400 lm noodmodus",
+      autonomie: "1 h / 3 h",
+      batterij: "LiFePO4 volgens Zemper reeksdata waar beschikbaar",
+      bescherming: "Volgens gekozen uitvoering",
+      norm: "EN 60598-2-22 te valideren op definitieve fiche",
+    },
+  },
+  {
+    code: "SPAZIO-POWER-OP",
+    name: "SPAZIO POWER opbouw high output",
+    type: "high-output",
+    mounting: "opbouw",
+    application: "High output",
+    source: "https://zemper.com/nl-be/noodverlichting-4/spazio-power-4/",
+    fiche: {
+      lichtstroom: "380-400 lm noodmodus",
+      autonomie: "1 h / 3 h",
+      batterij: "LiFePO4 volgens Zemper reeksdata waar beschikbaar",
+      bescherming: "Volgens gekozen uitvoering",
+      norm: "EN 60598-2-22 te valideren op definitieve fiche",
+    },
+  },
+];
 
 const toolLabels = {
   escapeRoute: "VR",
@@ -243,6 +341,7 @@ function calculateProposal(config) {
 
 function renderSketch() {
   sketch.querySelectorAll(".placed-item").forEach((node) => node.remove());
+  renderRoute();
   const config = readConfig();
   getPlacedItems(config).forEach((item) => {
     const marker = document.createElement("button");
@@ -259,6 +358,32 @@ function renderSketch() {
       update();
     });
     sketch.append(marker);
+  });
+}
+
+function getOrthogonalRoutePath(points) {
+  if (!points.length) return "";
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+    return `${path} H ${point.x} V ${point.y}`;
+  }, "");
+}
+
+function renderRoute() {
+  routeLayer.innerHTML = "";
+  routeLayer.setAttribute("viewBox", "0 0 100 100");
+  if (!routePoints.length) return;
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", getOrthogonalRoutePath(routePoints));
+  path.setAttribute("class", "escape-route-path");
+  routeLayer.append(path);
+  routePoints.forEach((point, index) => {
+    const marker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    marker.setAttribute("cx", point.x);
+    marker.setAttribute("cy", point.y);
+    marker.setAttribute("r", index === 0 ? "1.8" : "1.3");
+    marker.setAttribute("class", "route-node");
+    routeLayer.append(marker);
   });
 }
 
@@ -299,6 +424,7 @@ function renderQuote() {
 function update() {
   renderSketch();
   renderQuote();
+  renderDeviceCatalog();
 }
 
 toolButtons.forEach((button) => {
@@ -312,11 +438,82 @@ sketch.addEventListener("click", (event) => {
   const rect = sketch.getBoundingClientRect();
   const x = ((event.clientX - rect.left) / rect.width) * 100;
   const y = ((event.clientY - rect.top) / rect.height) * 100;
+  if (selectedTool === "escapeRoute") {
+    routePoints.push({ x, y });
+    update();
+    return;
+  }
   manualItems.push({ id: crypto.randomUUID(), type: selectedTool, x, y });
   update();
 });
 
 form.addEventListener("input", update);
 printButton.addEventListener("click", () => window.print());
+deviceTypeFilter.addEventListener("input", renderDeviceCatalog);
+deviceMountingFilter.addEventListener("input", renderDeviceCatalog);
+
+function getFicheText(device) {
+  return [
+    `Technische fiche - ${device.code}`,
+    "",
+    `Naam: ${device.name}`,
+    `Type: ${device.application}`,
+    `Montage: ${device.mounting}`,
+    `Bron: ${device.source}`,
+    "",
+    "Technische gegevens:",
+    ...Object.entries(device.fiche).map(([key, value]) => `- ${key}: ${value}`),
+  ].join("\n");
+}
+
+function downloadFiche(device) {
+  const blob = new Blob([getFicheText(device)], { type: "text/plain;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${device.code}-technische-fiche.txt`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function renderDeviceCatalog() {
+  const type = deviceTypeFilter.value;
+  const mounting = deviceMountingFilter.value;
+  const devices = deviceCatalog.filter((device) => {
+    const typeMatches = type === "all" || device.type === type;
+    const mountingMatches = mounting === "all" || device.mounting === mounting;
+    return typeMatches && mountingMatches;
+  });
+
+  deviceCatalogNode.innerHTML = devices
+    .map(
+      (device) => `
+        <article class="device-card">
+          <div>
+            <p class="eyebrow">${device.application} · ${device.mounting}</p>
+            <h3>${device.code}</h3>
+            <p>${device.name}</p>
+            <ul class="tech-list">
+              ${Object.entries(device.fiche)
+                .map(([key, value]) => `<li>${key}: ${value}</li>`)
+                .join("")}
+            </ul>
+          </div>
+          <div class="device-actions">
+            <a href="${device.source}" target="_blank" rel="noreferrer">Online fiche</a>
+            <button type="button" data-download="${device.code}">Download fiche</button>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+
+  deviceCatalogNode.querySelectorAll("[data-download]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const device = deviceCatalog.find((item) => item.code === button.dataset.download);
+      downloadFiche(device);
+    });
+  });
+}
 
 update();
+
